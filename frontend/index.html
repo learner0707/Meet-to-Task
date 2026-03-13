@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Meet toTask</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="navbar">
+
+<div class="logo">💬 Meet toTask</div>
+
+<div class="tagline">
+Turn meeting conversations into actionable engineering tasks
+</div>
+
+<div class="nav-links">
+<a href="#">Sign In</a>
+<a href="#">Record Live Meeting</a>
+<a href="#">Create Team</a>
+</div>
+
+</div>
+
+
+<div class="main-container">
+
+<div class="card">
+
+<h2>Upload Meeting Transcript or Audio</h2>
+
+<label>GitHub Repository</label>
+<input id="repo" value="learner0707/ai-meeting-demo">
+
+<label>GitHub Token</label>
+<input id="token">
+
+
+<!-- Hidden File Inputs -->
+
+<input type="file" id="txtFile" accept=".txt" hidden>
+<input type="file" id="audioFile" accept=".wav,.mp3" hidden>
+
+
+<div class="buttons">
+
+<button class="btn blue" onclick="selectTranscript()">
+Upload Transcript
+</button>
+
+<button class="btn green" onclick="selectAudio()">
+Upload Meeting Audio
+</button>
+
+<button class="btn blue" onclick="processTranscript()">
+Analyze Meeting
+</button>
+
+</div>
+
+
+<p class="info">
+Upload a transcript (.txt) or meeting audio (.wav / .mp3).  
+The system converts speech to text and extracts tasks automatically.
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Meeting Summary</h2>
+
+<div class="summary-box">
+<ul id="summaryList"></ul>
+</div>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Generated Issues</h2>
+
+<div id="issuesList"></div>
+
+</div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
