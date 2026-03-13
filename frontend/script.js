@@ -1,207 +1,207 @@
-// open transcript file picker
-function selectTranscript(){
+let transcriptText = ""
 
-document.getElementById("txtFile").click()
+const transcriptInput = document.getElementById("transcriptFile")
+const audioInput = document.getElementById("audioFile")
 
+const uploadTranscriptBtn = document.getElementById("uploadTranscriptBtn")
+const uploadAudioBtn = document.getElementById("uploadAudioBtn")
+const analyzeBtn = document.getElementById("analyzeBtn")
+
+const summaryBox = document.getElementById("summaryBox")
+const tasksContainer = document.getElementById("tasksContainer")
+
+
+/* Upload transcript */
+
+uploadTranscriptBtn.onclick = () => {
+transcriptInput.click()
+}
+
+transcriptInput.onchange = async () => {
+
+const file = transcriptInput.files[0]
+
+if(!file){
+alert("Select transcript file")
+return
+}
+
+const text = await file.text()
+
+transcriptText = text
+
+alert("Transcript uploaded successfully")
 }
 
 
+/* Upload audio */
 
-// open audio file picker
-function selectAudio(){
-
-document.getElementById("audioFile").click()
-
+uploadAudioBtn.onclick = () => {
+audioInput.click()
 }
 
+audioInput.onchange = async () => {
 
+const file = audioInput.files[0]
 
-// when transcript selected
-document.getElementById("txtFile").addEventListener("change",function(){
-
-const file = this.files[0]
-
-if(!file) return
-
-const reader = new FileReader()
-
-reader.onload = function(e){
-
-const transcript = e.target.result
-
-sendTranscript(transcript)
-
+if(!file){
+alert("Select audio file")
+return
 }
-
-reader.readAsText(file)
-
-})
-
-
-
-// when audio selected
-document.getElementById("audioFile").addEventListener("change",function(){
-
-const file = this.files[0]
-
-if(!file) return
 
 const formData = new FormData()
+formData.append("audio", file)
 
-formData.append("audio",file)
-
-fetch("/upload-audio",{
+const res = await fetch("/upload-audio",{
 method:"POST",
 body:formData
 })
-.then(res=>res.json())
-.then(data=>{
+
+const data = await res.json()
+
+if(data.error){
+alert(data.error)
+return
+}
+
+/* store transcript returned */
+transcriptText = data.transcript
 
 showSummary(data.summary)
+showTasks(data.tasks)
 
-showIssues(data.tasks)
-
-})
-
-})
-
-
-
-// manual analyze
-function processTranscript(){
-
-const transcript =
-document.getElementById("transcript")?.value
-
-if(!transcript) return
-
-sendTranscript(transcript)
+alert("Audio processed successfully")
 
 }
 
 
+/* Analyze meeting */
 
-// send transcript to backend
-function sendTranscript(transcript){
+analyzeBtn.onclick = async () => {
 
-fetch("/process-text",{
+if(!transcriptText){
+alert("Upload transcript or audio first")
+return
+}
 
+const res = await fetch("/process-text",{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
-transcript: transcript
+transcript: transcriptText
+})
 })
 
-})
+const data = await res.json()
 
-.then(res=>res.json())
-
-.then(data=>{
+if(data.error){
+alert(data.error)
+return
+}
 
 showSummary(data.summary)
-
-showIssues(data.tasks)
-
-})
+showTasks(data.tasks)
 
 }
 
 
+/* Show summary */
 
-// show summary
 function showSummary(summary){
 
-const list =
-document.getElementById("summaryList")
+summaryBox.innerHTML=""
 
-list.innerHTML=""
+/* handle empty summary */
 
-summary.forEach(point=>{
+if(!summary){
+summaryBox.innerHTML="<p>No summary generated</p>"
+return
+}
 
-const li = document.createElement("li")
+/* FIX: if summary is string convert to array */
 
-li.textContent = point
+if(typeof summary === "string"){
+summary = summary.split(".")
+}
 
-list.appendChild(li)
+/* ensure summary is array */
+
+if(!Array.isArray(summary)){
+summary = [summary]
+}
+
+summary.forEach(point => {
+
+if(point.trim()==="") return
+
+const p=document.createElement("p")
+p.innerText="• "+point.trim()
+
+summaryBox.appendChild(p)
 
 })
 
 }
 
 
+/* Show tasks */
 
-// show issues
-function showIssues(tasks){
+function showTasks(tasks){
 
-const container =
-document.getElementById("issuesList")
+tasksContainer.innerHTML=""
 
-container.innerHTML=""
+if(!tasks) return
 
-const repo =
-document.getElementById("repo").value
+tasks.forEach(task => {
 
-const token =
-document.getElementById("token").value
+const div=document.createElement("div")
+div.className="task-card"
 
-
-tasks.forEach(task=>{
-
-const card = document.createElement("div")
-
-card.className="issueCard"
-
-card.innerHTML=`
-
+div.innerHTML=`
 <h3>${task.title}</h3>
-
 <p>${task.description}</p>
 
-<div class="badges">
+<div class="tags">
 <span class="priority">${task.priority}</span>
 <span class="category">${task.category}</span>
 <span class="status">${task.status}</span>
 </div>
 
 <button class="issueBtn">Open GitHub Issue</button>
-
 `
 
-const btn = card.querySelector(".issueBtn")
+div.querySelector("button").onclick=async()=>{
 
-btn.onclick = async function(){
+const repo=document.getElementById("repo").value
+const token=document.getElementById("token").value
 
-const res = await fetch("/create-issue",{
-
+const res=await fetch("/create-issue",{
 method:"POST",
-
 headers:{
 "Content-Type":"application/json"
 },
-
 body:JSON.stringify({
 repo:repo,
 token:token,
 task:task
 })
-
 })
 
-const data = await res.json()
+const issue=await res.json()
 
-if(data.issue_url){
+const url = issue.html_url || issue.url
 
-window.open(data.issue_url,"_blank")
-
+if(url){
+window.open(url,"_blank")
+}else{
+alert("Issue created but link unavailable")
 }
 
 }
 
-container.appendChild(card)
+tasksContainer.appendChild(div)
 
 })
 

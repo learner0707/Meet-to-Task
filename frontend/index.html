@@ -1,98 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+<meta charset="UTF-8">
 <title>Meet toTask</title>
 <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body>
 
-<div class="navbar">
+<header class="topbar">
 
-<div class="logo">💬 Meet toTask</div>
+<div class="logo">
+💬 Meet toTask
+</div>
 
 <div class="tagline">
 Turn meeting conversations into actionable engineering tasks
 </div>
 
-<div class="nav-links">
+<div class="navlinks">
 <a href="#">Sign In</a>
 <a href="#">Record Live Meeting</a>
 <a href="#">Create Team</a>
 </div>
 
-</div>
+</header>
 
 
-<div class="main-container">
+<div class="container">
 
 <div class="card">
 
 <h2>Upload Meeting Transcript or Audio</h2>
 
 <label>GitHub Repository</label>
-<input id="repo" value="learner0707/ai-meeting-demo">
+<input id="repo" type="text" placeholder="username/repository">
 
 <label>GitHub Token</label>
-<input id="token">
-
-
-<!-- Hidden File Inputs -->
-
-<input type="file" id="txtFile" accept=".txt" hidden>
-<input type="file" id="audioFile" accept=".wav,.mp3" hidden>
+<input id="token" type="text" placeholder="GitHub Token">
 
 
 <div class="buttons">
 
-<button class="btn blue" onclick="selectTranscript()">
+<button id="uploadTranscriptBtn" class="btn blue">
 Upload Transcript
 </button>
 
-<button class="btn green" onclick="selectAudio()">
+<input type="file" id="transcriptFile" accept=".txt" hidden>
+
+<button id="uploadAudioBtn" class="btn green">
 Upload Meeting Audio
 </button>
 
-<button class="btn blue" onclick="processTranscript()">
+<input type="file" id="audioFile" accept=".wav,.mp3" hidden>
+
+<button id="analyzeBtn" class="btn blue">
 Analyze Meeting
 </button>
 
 </div>
 
-
-<p class="info">
-Upload a transcript (.txt) or meeting audio (.wav / .mp3).  
+<p class="upload-note">
+Upload a transcript (.txt) or meeting audio (.wav / .mp3).
 The system converts speech to text and extracts tasks automatically.
 </p>
 
 </div>
 
 
-
 <div class="card">
 
 <h2>Meeting Summary</h2>
 
-<div class="summary-box">
-<ul id="summaryList"></ul>
-</div>
+<div id="summaryBox" class="summary"></div>
 
 </div>
-
 
 
 <div class="card">
 
 <h2>Generated Issues</h2>
 
-<div id="issuesList"></div>
+<div id="tasksContainer"></div>
 
 </div>
 
-</div>
 
+</div>
 
 <script src="script.js"></script>
 

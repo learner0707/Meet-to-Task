@@ -10,38 +10,36 @@ def create_github_issue(repo, token, task):
         "Accept": "application/vnd.github+json"
     }
 
-    data = {
-        "title": task["title"],
-        "body": f"""
-Description: {task['description']}
+    body = f"""
+Priority: {task.get("priority")}
 
-Priority: {task['priority']}
-Category: {task['category']}
-Status: {task['status']}
+Category: {task.get("category")}
+
+Status: {task.get("status")}
+
+Description:
+{task.get("description")}
 """
+
+    data = {
+        "title": task.get("title"),
+        "body": body
     }
 
-    try:
+    response = requests.post(url, headers=headers, json=data)
 
-        response = requests.post(url, json=data, headers=headers)
+    if response.status_code == 201:
 
         issue = response.json()
 
-        if "html_url" in issue:
-            return {
-                "issue_title": issue["title"],
-                "issue_url": issue["html_url"]
-            }
+        return {
+            "url": issue["html_url"]
+        }
 
-        else:
-            return {
-                "issue_title": task["title"],
-                "issue_url": "#"
-            }
+    else:
 
-    except Exception as e:
+        print("GitHub API ERROR:", response.text)
 
         return {
-            "issue_title": task["title"],
-            "issue_url": "#"
+            "url": None
         }

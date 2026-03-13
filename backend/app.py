@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from task_extractor import extract_tasks
+from llm_task_extractor import extract_tasks_llm
 from github_api import create_github_issue
 from audio_to_text import convert_audio_to_text
 import os
@@ -8,7 +8,6 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# upload folder
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -19,7 +18,6 @@ def home():
     return send_from_directory("../frontend", "index.html")
 
 
-# serve css/js
 @app.route("/<path:path>")
 def static_files(path):
     return send_from_directory("../frontend", path)
@@ -28,11 +26,15 @@ def static_files(path):
 # process transcript text
 @app.route("/process-text", methods=["POST"])
 def process_text():
+
     try:
         data = request.json
         transcript = data.get("transcript", "")
 
-        summary, tasks = extract_tasks(transcript)
+        if not transcript:
+            return jsonify({"error": "No transcript provided"}), 400
+
+        summary, tasks = extract_tasks_llm(transcript)
 
         return jsonify({
             "summary": summary,
@@ -40,67 +42,47 @@ def process_text():
         })
 
     except Exception as e:
-        print("Text processing error:", e)
-        return jsonify({
-            "summary": [],
-            "tasks": []
-        })
+        print("PROCESS TEXT ERROR:", e)
+        return jsonify({"error": "Failed to process transcript"}), 500
 
 
-# process audio upload
+# upload audio and convert to transcript
 @app.route("/upload-audio", methods=["POST"])
 def upload_audio():
+
     try:
 
         if "audio" not in request.files:
-            return jsonify({
-                "summary": [],
-                "tasks": []
-            })
+            return jsonify({"error": "No audio file uploaded"}), 400
 
         file = request.files["audio"]
 
-        if file.filename == "":
-            return jsonify({
-                "summary": [],
-                "tasks": []
-            })
-
-        # save file
         path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(path)
 
-        # convert audio -> text
         transcript = convert_audio_to_text(path)
 
-        print("Transcript:", transcript)
+        if transcript is None or transcript.strip() == "":
+            return jsonify({"error": "Audio could not be understood"}), 400
 
-        if transcript == "":
-            return jsonify({
-                "summary": ["Audio could not be understood"],
-                "tasks": []
-            })
+        summary, tasks = extract_tasks_llm(transcript)
 
-        summary, tasks = extract_tasks(transcript)
-
+        # IMPORTANT: returning transcript also
         return jsonify({
+            "transcript": transcript,
             "summary": summary,
             "tasks": tasks
         })
 
     except Exception as e:
-
-        print("Audio processing error:", e)
-
-        return jsonify({
-            "summary": ["Audio processing failed"],
-            "tasks": []
-        })
+        print("UPLOAD AUDIO ERROR:", e)
+        return jsonify({"error": "Audio processing failed"}), 500
 
 
 # create github issue
 @app.route("/create-issue", methods=["POST"])
 def create_issue():
+
     try:
 
         data = request.json
@@ -109,18 +91,16 @@ def create_issue():
         token = data.get("token")
         task = data.get("task")
 
+        if not repo or not token or not task:
+            return jsonify({"error": "Missing required data"}), 400
+
         issue = create_github_issue(repo, token, task)
 
         return jsonify(issue)
 
     except Exception as e:
-
-        print("GitHub issue error:", e)
-
-        return jsonify({
-            "issue_title": "Error creating issue",
-            "issue_url": "#"
-        })
+        print("CREATE ISSUE ERROR:", e)
+        return jsonify({"error": "Failed to create issue"}), 500
 
 
 if __name__ == "__main__":
